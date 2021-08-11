@@ -1,0 +1,119 @@
+<script type='module'>
+  import { run } from 'https://unpkg.com/permutable@0.2?module'
+
+  const mobius = {
+    name: 'mobius plane',
+    params: {
+      spacing: {
+        type: 'number',
+        value: 91,
+        min: 1,
+        max: 120,
+        step: 2
+      },
+      distance: {
+        type: 'number',
+        value: 3,
+        min: -3,
+        max: 3
+      },
+      units: {
+        type: 'number',
+        value: 16,
+        min: 8,
+        max: 98,
+        step: 2
+      },
+      magic: {
+        type: 'number',
+        value: 2.55,
+        min: 0,
+        max: 10
+      },
+      stereo: {
+        type: 'toggle',
+        active: true
+      }
+    },
+    setup: function (canvas) {
+      const context = canvas.getContext('2d')
+
+      return function render ({ spacing, distance, stereo, units, magic }) {
+        const { width, height } = canvas
+        const pointSize = 1 / units
+        const gridSize = units * spacing
+
+        const points = []
+
+        context.save()
+        context.fillStyle = '#000'
+        context.fillRect(0, 0, width, height)
+        context.translate((width / 2), (height / 2))
+        context.fillStyle = 'fff'
+
+        for (var col = 0; col < units; col++) {
+          for (var row = 0; row < units; row++) {
+            context.fillStyle = '#fff'
+
+            const x = col * spacing + spacing / 2 - gridSize / 2 + Math.sin(magic / 2) * 100
+            const y = row * spacing + spacing / 2 - gridSize / 2 + Math.cos(magic / 3) * 100
+
+            const getNewPointsize = () => {
+              let size = 1
+
+              if ((col + 1) <= units / 2 && (row + 1) < units / 2) {
+                // top left
+                size = (col + 1) * (row + 1)
+              }
+              if ((col + 1) >= units / 2 && (row + 1) < units / 2) {
+                // top right
+                size = (units - (col + 1)) * (row + 1)
+              }
+              if ((col + 1) <= units / 2 && (row + 1) >= units / 2) {
+                // bottom left
+                size = (units - (row + 1)) * (col + 1)
+              }
+              if ((col + 1) > units / 2 && (row + 1) >= units / 2) {
+                // bottom right
+                size = (units - (col + 1)) * (units - (row + 1))
+              }
+              return pointSize * size * 5
+            }
+
+            if (stereo) {
+              const [x2, y2, z] = stereoxyz(...stereoXY(x, y, distance))
+              const point = [x2 * 10000 - getNewPointsize() / 2, y2 * 10000 - getNewPointsize() / 2]
+              points.push({ point, size: getNewPointsize() })
+              context.fillRect(point[0], point[1], getNewPointsize(), getNewPointsize())
+            } else {
+              const point = [x - getNewPointsize() / 2, y - getNewPointsize() / 2]
+              points.push({ point, size: getNewPointsize() })
+              context.fillRect(point[0], point[1], getNewPointsize(), getNewPointsize())
+            }
+          }
+        }
+
+        console.log(JSON.stringify(points))
+        context.restore()
+      }
+    }
+  }
+
+  function stereoXY (x, y, z) {
+    return [x / (1 - z), y / (1 - z)]
+  }
+
+  function stereoxyz (X, Y) {
+    const X2 = X*X
+    const Y2 = Y*Y
+    return [
+      (2 * X) / (1 + X2 + Y2),
+      (2 * Y) / (1 + X2 + Y2),
+      (-1 + X2 + Y2) / (1 + X2 + Y2)
+    ]
+  }
+
+  run(mobius)
+</script>
+</body>
+</html>

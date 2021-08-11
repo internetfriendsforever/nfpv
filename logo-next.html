@@ -1,0 +1,98 @@
+<script type='module'>
+  import { run } from 'https://unpkg.com/permutable@0.2.1?module'
+
+  const mobius = {
+    name: 'mobius plane',
+    params: {
+      spacing: {
+        type: 'number',
+        value: 100,
+        min: 1,
+        max: 120,
+        step: 2
+      },
+      distance: {
+        type: 'number',
+        value: 2,
+        min: -3,
+        max: 3
+      },
+      units: {
+        type: 'number',
+        value: 20,
+        min: 4,
+        max: 60,
+        step: 2
+      },
+      stereo: {
+        type: 'toggle',
+        active: true
+      },
+      time: {
+        type: 'timer'
+      }
+    },
+    setup: function (canvas) {
+      const context = canvas.getContext('2d')
+
+      return function render ({ time, spacing, distance, stereo, units }) {
+        const { width, height } = canvas
+        const pointSize = 4
+        const gridSize = units * spacing
+
+        context.save()
+        context.fillStyle = '#1A181C'
+        context.fillRect(0, 0, width, height)
+        context.translate((width / 2), (height / 2))
+        context.fillStyle = 'hotpink'
+
+        for (var col = 0; col < units; col++) {
+          for (var row = 0; row < units; row++) {
+            if (col <= units / 2 && row <= units / 2) {
+              context.fillStyle = '#74AA6E' // green
+            }
+            if (col >= units / 2 && row <= units / 2) {
+              context.fillStyle = '#349BCD' // blue
+            }
+            if (col <= units / 2 && row >= units / 2) {
+              context.fillStyle = '#CBCD90' // yellow
+            }
+            if (col >= units / 2 && row >= units / 2) {
+              context.fillStyle = '#DBA0B2' // pink
+            }
+            const x = col * spacing + spacing / 2 - gridSize / 2 + Math.sin(time / 2) * 100
+            const y = row * spacing + spacing / 2 - gridSize / 2 + Math.cos(time / 3) * 100
+
+
+            if (stereo) {
+              const [x2, y2, z] = stereoxyz(...stereoXY(x, y, distance))
+              context.fillRect(x2 * 10000 - pointSize / 2, y2 * 10000 - pointSize / 2, pointSize, pointSize)
+            } else {
+              context.fillRect(x- pointSize / 2, y- pointSize / 2, pointSize, pointSize)
+            }
+          }
+        }
+
+        context.restore()
+      }
+    }
+  }
+
+  function stereoXY (x, y, z) {
+    return [x / (1 - z), y / (1 - z)]
+  }
+
+  function stereoxyz (X, Y) {
+    const X2 = X*X
+    const Y2 = Y*Y
+    return [
+      (2 * X) / (1 + X2 + Y2),
+      (2 * Y) / (1 + X2 + Y2),
+      (-1 + X2 + Y2) / (1 + X2 + Y2)
+    ]
+  }
+
+  run(mobius)
+</script>
+</body>
+</html>
